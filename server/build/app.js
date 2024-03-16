@@ -16,11 +16,31 @@ const express_1 = __importDefault(require("express"));
 const axios_1 = __importDefault(require("axios"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
+const mongodb_1 = require("mongodb");
 const app = (0, express_1.default)();
 const port = 4000;
 app.use(express_1.default.static('../client'));
 app.use(express_1.default.json({ limit: '2mb' }));
 app.listen(port, () => console.log(`running on port ${port}`));
+const url = process.env.MONGO_KEY;
+const client = new mongodb_1.MongoClient(url);
+function insertData(data) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield client.connect();
+            const database = client.db("weatherDatabase");
+            const collection = database.collection("weatherCollection");
+            yield collection.insertOne(data);
+            console.log("Inserted data into MONGODB");
+        }
+        catch (e) {
+            console.log(e.stack);
+        }
+        finally {
+            yield client.close();
+        }
+    });
+}
 app.post('/weather', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     console.log('request received!');
     // const data = req.body;
@@ -43,6 +63,7 @@ app.post('/weather', (req, res) => __awaiter(void 0, void 0, void 0, function* (
         }
         const response = yield axios_1.default.get(url);
         const weatherData = response.data;
+        insertData(weatherData);
         const successResponse = { success: true, message: "Server received your response", data: { weatherData } };
         return res.json(successResponse);
     }

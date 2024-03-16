@@ -13,6 +13,23 @@ app.use(express.json({limit: '2mb'}));
 
 app.listen(port, ()=> console.log(`running on port ${port}`));
 
+const url:any = process.env.MONGO_KEY;
+const client = new MongoClient(url);
+
+async function insertData(data:any){
+    try{
+        await client.connect();
+        const database = client.db("weatherDatabase");
+        const collection = database.collection("weatherCollection");
+        await collection.insertOne(data);
+        console.log("Inserted data into MONGODB");
+    }catch(e:any){
+        console.log(e.stack);
+    }finally{
+        await client.close();
+    }
+}
+
 app.post('/weather', async(req:Request, res:Response) => {
     console.log('request received!');
     // const data = req.body;
@@ -39,6 +56,9 @@ app.post('/weather', async(req:Request, res:Response) => {
 
         const response = await axios.get(url);
         const weatherData = response.data;
+
+        insertData(weatherData)
+
         const successResponse = {success:true, message: "Server received your response", data:{weatherData}};
         return res.json(successResponse);
     }catch(e){
