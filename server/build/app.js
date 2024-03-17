@@ -24,74 +24,118 @@ app.use(express_1.default.json({ limit: '2mb' }));
 app.listen(port, () => console.log(`running on port ${port}`));
 const url = process.env.MONGO_KEY;
 const client = new mongodb_1.MongoClient(url);
-function insertData(data) {
+function connectToMongo() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             yield client.connect();
-            const database = client.db("weatherDatabase");
-            const collection = database.collection("weatherCollection");
-            yield collection.insertOne(data);
-            console.log("Inserted data into MONGODB");
+            console.log("Connected to database");
         }
         catch (e) {
-            console.log(e.stack);
-        }
-        finally {
-            yield client.close();
+            console.error("Error connecting to mongo", e);
+            throw e;
         }
     });
 }
-app.post('/weather', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log('request received!');
-    // const data = req.body;
-    // res.send(data);
-    const { lat, lon, cityID, countryID } = req.body;
-    if ((lat === undefined || lon === undefined) &&
-        (cityID === undefined || cityID === "" || cityID === null)) {
-        const errorResponse = { success: false, message: "You put nothing...", data: { invalidCityID: cityID } };
-        return res.status(400).json(errorResponse);
-    }
-    try {
-        let url;
-        const key = process.env.API_KEY;
-        const cityValue = encodeURIComponent(cityID);
-        if (countryID === "QS") {
-            url = `https://api.openweathermap.org/data/2.5/weather?q=${cityValue}&appid=${key}&units=metric`;
+function closeMongo() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield client.close();
+            console.log("Closed database");
         }
-        else {
-            url = `https://api.openweathermap.org/data/2.5/weather?q=${cityValue},${countryID}&appid=${key}&units=metric`;
+        catch (e) {
+            console.error("Error closing connection", e);
+            throw e;
         }
-        const response = yield axios_1.default.get(url);
-        const weatherData = response.data;
-        insertData(weatherData);
-        const successResponse = { success: true, message: "Server received your response", data: { weatherData } };
-        return res.json(successResponse);
-    }
-    catch (e) {
-        const errorResponse = { success: false, message: "Enter a valid city" };
-        return res.status(400).json(errorResponse);
-    }
-}));
-app.post('/location', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        let url;
-        const { cityID, countryID } = req.body;
-        const key = process.env.API_KEY;
-        //encodeURIComponent removes the whitespaces from cityID
-        const cityValue = encodeURIComponent(cityID);
-        if (countryID == "QS") {
-            url = `http://api.openweathermap.org/geo/1.0/direct?q=${cityValue}&limit=1&appid=${key}`;
+    });
+}
+function insertData(data) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const database = client.db("weatherDatabase");
+            let collectionName = "";
+            if (data.weather) {
+                collectionName = "weatherCollection";
+            }
+            else if (data.location) {
+                collectionName = "locationCollection";
+            }
+            if (collectionName) {
+                const collection = database.collection(collectionName);
+                yield collection.insertOne(data);
+                console.log("Inserted data into MONGODB");
+            }
+            else {
+                console.log("Insert did not work");
+            }
         }
-        else {
-            url = `http://api.openweathermap.org/geo/1.0/direct?q=${cityValue},${countryID}&limit=1&appid=${key}`;
+        catch (e) {
+            console.error("Error inserting into Mongo", e);
+            throw e;
         }
-        const response = yield axios_1.default.get(url);
-        const locationData = response.data;
-        const successResponse = { success: true, message: "Server received your location response ...", data: { locationData } };
-        return res.json(successResponse);
-    }
-    catch (e) {
-        const errorResponse = { success: false, message: "Location did not work..." };
-        return res.status(400).json(errorResponse);
-    }
+    });
+}
+connectToMongo().then(() => {
+    app.post('/weather', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+        console.log('request received!');
+        // const data = req.body;
+        // res.send(data);
+        const { lat, lon, cityID, countryID } = req.body;
+        if ((lat === undefined || lon === undefined) &&
+            (cityID === undefined || cityID === "" || cityID === null)) {
+            const errorResponse = { success: false, message: "You put nothing...", data: { invalidCityID: cityID } };
+            return res.status(400).json(errorResponse);
+        }
+        try {
+            let url;
+            const key = process.env.API_KEY;
+            const cityValue = encodeURIComponent(cityID);
+            if (countryID === "QS") {
+                url = `https://api.openweathermap.org/data/2.5/weather?q=${cityValue}&appid=${key}&units=metric`;
+            }
+            else {
+                url = `https://api.openweathermap.org/data/2.5/weather?q=${cityValue},${countryID}&appid=${key}&units=metric`;
+            }
+            const response = yield axios_1.default.get(url);
+            const weatherData = response.data;
+            insertData(weatherData);
+            const successResponse = { success: true, message: "Server received your response", data: { weatherData } };
+            return res.json(successResponse);
+        }
+        catch (e) {
+            const errorResponse = { success: false, message: "Enter a valid city" };
+            return res.status(400).json(errorResponse);
+        }
+    }));
+    app.post('/location', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            let url;
+            const { cityID, countryID } = req.body;
+            const key = process.env.API_KEY;
+            //encodeURIComponent removes the whitespaces from cityID
+            const cityValue = encodeURIComponent(cityID);
+            if (countryID == "QS") {
+                url = `http://api.openweathermap.org/geo/1.0/direct?q=${cityValue}&limit=1&appid=${key}`;
+            }
+            else {
+                url = `http://api.openweathermap.org/geo/1.0/direct?q=${cityValue},${countryID}&limit=1&appid=${key}`;
+            }
+            const response = yield axios_1.default.get(url);
+            const locationData = response.data;
+            insertData(locationData);
+            const successResponse = { success: true, message: "Server received your location response ...", data: { locationData } };
+            return res.json(successResponse);
+        }
+        catch (e) {
+            const errorResponse = { success: false, message: "Location did not work..." };
+            return res.status(400).json(errorResponse);
+        }
+    }));
+}).catch(error => {
+    console.error("Failed to connect to MongoDB:", error);
+    process.exit(1); // Exit the process if MongoDB connection fails
+});
+process.on('SIGINT', () => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("SHUTTING DOWN MONGO ...");
+    yield closeMongo();
+    process.exit(0);
 }));
