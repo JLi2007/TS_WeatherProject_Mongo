@@ -16,65 +16,13 @@ const express_1 = __importDefault(require("express"));
 const axios_1 = __importDefault(require("axios"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const mongodb_1 = require("mongodb");
+const Mongo_1 = require("./Mongo");
 const app = (0, express_1.default)();
 const port = 4000;
 app.use(express_1.default.static('../client'));
 app.use(express_1.default.json({ limit: '2mb' }));
 app.listen(port, () => console.log(`running on port ${port}`));
-const url = process.env.MONGO_KEY;
-const client = new mongodb_1.MongoClient(url);
-function connectToMongo() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield client.connect();
-            console.log("Connected to database");
-        }
-        catch (e) {
-            console.error("Error connecting to mongo", e);
-            throw e;
-        }
-    });
-}
-function closeMongo() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield client.close();
-            console.log("Closed database");
-        }
-        catch (e) {
-            console.error("Error closing connection", e);
-            throw e;
-        }
-    });
-}
-function insertData(data) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const database = client.db("weatherDatabase");
-            let collectionName = "";
-            if (data.weather) {
-                collectionName = "weatherCollection";
-            }
-            else if (data.location) {
-                collectionName = "locationCollection";
-            }
-            if (collectionName) {
-                const collection = database.collection(collectionName);
-                yield collection.insertOne(data);
-                console.log("Inserted data into MONGODB");
-            }
-            else {
-                console.log("Insert did not work");
-            }
-        }
-        catch (e) {
-            console.error("Error inserting into Mongo", e);
-            throw e;
-        }
-    });
-}
-connectToMongo().then(() => {
+(0, Mongo_1.connectToMongo)().then(() => {
     app.post('/weather', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         console.log('request received!');
         // const data = req.body;
@@ -97,7 +45,7 @@ connectToMongo().then(() => {
             }
             const response = yield axios_1.default.get(url);
             const weatherData = response.data;
-            insertData(weatherData);
+            (0, Mongo_1.insertData)(weatherData);
             const successResponse = { success: true, message: "Server received your response", data: { weatherData } };
             return res.json(successResponse);
         }
@@ -121,7 +69,7 @@ connectToMongo().then(() => {
             }
             const response = yield axios_1.default.get(url);
             const locationData = response.data;
-            insertData(locationData);
+            (0, Mongo_1.insertData)(locationData[0]);
             const successResponse = { success: true, message: "Server received your location response ...", data: { locationData } };
             return res.json(successResponse);
         }
@@ -136,6 +84,6 @@ connectToMongo().then(() => {
 });
 process.on('SIGINT', () => __awaiter(void 0, void 0, void 0, function* () {
     console.log("SHUTTING DOWN MONGO ...");
-    yield closeMongo();
+    yield (0, Mongo_1.closeMongo)();
     process.exit(0);
 }));
