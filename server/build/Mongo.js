@@ -55,12 +55,12 @@ function insertData(data) {
                 yield collection.insertOne(data);
                 console.log("Inserted data into MONGODB");
                 const query = { name: "Windsor" };
-                const location = "Milan";
+                const location = "Milan"; //Or whatever city I want to update//delete
                 //    const location = await findDocuments(collection,query);
-                const update = yield updateDocuments(collection, location);
+                //    const update = await updateDocuments(collection, location);
                 //    const deletion = await deleteDocuments(collection, location)
                 //    console.log("${query}:", location)
-                console.log(`${location}:`, JSON.stringify(update));
+                //    console.log(`${location}:`, JSON.stringify(update));
                 //    console.log(`all instances of ${location} deleted`, deletion)
             }
             else {
@@ -74,42 +74,3 @@ function insertData(data) {
     });
 }
 exports.insertData = insertData;
-//Some practice functions that I wanted to try
-function findDocuments(collection, query) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const result = yield collection.find(query).toArray();
-            return result;
-        }
-        catch (e) {
-            console.error("Error finding documents:", e);
-            throw e;
-        }
-    });
-}
-function updateDocuments(collection, location) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const result = yield collection.updateMany({ name: location }, {
-                $set: {
-                    lat: `00000 ${location}`
-                }
-            });
-            return result;
-        }
-        catch (e) {
-            console.error("error in update", e);
-        }
-    });
-}
-function deleteDocuments(collection, query) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const result = yield collection.deleteMany({ name: { $regex: query } });
-            return result;
-        }
-        catch (e) {
-            console.error("error in deletion", e);
-        }
-    });
-}
