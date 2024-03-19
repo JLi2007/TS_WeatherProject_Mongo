@@ -37,13 +37,67 @@ async function insertData(data:any){
             const collection = database.collection(collectionName);
             await collection.insertOne(data);
             console.log("Inserted data into MONGODB");
+
+
+           const query = {name:"Windsor"};
+           const location = "Milan" //Or whatever city I want to update//delete
+        //    const location = await findDocuments(collection,query);
+        //    const update = await updateDocuments(collection, location);
+        //    const deletion = await deleteDocuments(collection, location)
+
+
+        //    console.log("${query}:", location)
+        //    console.log(`${location}:`, JSON.stringify(update));
+        //    console.log(`all instances of ${location} deleted`, deletion)
+        
         }else{
             console.log("Insert did not work")
         }
+
     }catch(e){
         console.error("Error inserting into Mongo", e);
         throw e;
     }
 }
+
+
+// //Some practice functions that I wanted to try
+// async function findDocuments(collection:any,query:any){
+//     try{
+//         const result = await collection.find(query).toArray();
+//         return result;
+//     }catch (e) {
+//         console.error("Error finding documents:", e);
+//         throw e;
+//     }
+// }
+
+// async function updateDocuments(collection:any, location:any){
+//     try{
+//         const result = await collection.updateMany(
+//             {name: location},
+//             {
+//                 //Dummy 
+//                 $set: {
+//                     lat: `00000 ${location}`
+//                 }
+//             },
+//             { upsert: true }
+//         )
+//         return result;
+//     }catch(e){
+//         console.error("error in update", e)
+//     }
+
+// }
+
+// async function deleteDocuments(collection:any, query:any){
+//     try{
+//         const result = await collection.deleteMany({name:{$regex:query}});
+//         return result;
+//     }catch(e){
+//         console.error("error in deletion", e);
+//     }
+// }
 
 export{connectToMongo, closeMongo,insertData}
