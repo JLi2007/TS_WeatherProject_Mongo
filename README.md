@@ -1,4 +1,4 @@
-My Weather Project converted to Typescript Part 3: Mongodb
+# My Weather Project Journey Part 3: Mongodb
 
 Next I will create a react frontend.
 
